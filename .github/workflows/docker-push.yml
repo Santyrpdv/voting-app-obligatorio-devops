@@ -52,14 +52,14 @@ jobs:
         TASK_DEF=$(aws ecs describe-task-definition --task-definition $TASK_FAMILY)
 
         NEW_DEF=$(echo $TASK_DEF | jq \
-          --arg VOTE_IMAGE "$ECR_REGISTRY/obligatorio-sparis-container-vote:latest" \
-          --arg RESULT_IMAGE "$ECR_REGISTRY/obligatorio-sparis-container-result:latest" \
-          --arg WORKER_IMAGE "$ECR_REGISTRY/obligatorio-sparis-container-worker:latest" \
+          --arg VOTE_IMAGE "$ECR_REGISTRY/obligatorio-sparis-vote:latest" \
+          --arg RESULT_IMAGE "$ECR_REGISTRY/obligatorio-sparis-result:latest" \
+          --arg WORKER_IMAGE "$ECR_REGISTRY/obligatorio-sparis-worker:latest" \
           '.taskDefinition |
           .containerDefinitions |= map(
-            if .name == "obligatorio-sparis-dev-container-vote" then .image = $VOTE_IMAGE
-            elif .name == "obligatorio-sparis-dev-container-result" then .image = $RESULT_IMAGE
-            elif .name == "obligatorio-sparis-dev-container-worker" then .image = $WORKER_IMAGE
+            if .name == "obligatorio-sparis-dev-vote" then .image = $VOTE_IMAGE
+            elif .name == "obligatorio-sparis-dev-result" then .image = $RESULT_IMAGE
+            elif .name == "obligatorio-sparis-dev-worker" then .image = $WORKER_IMAGE
             else . end
           ) |
           {
