@@ -46,21 +46,21 @@ jobs:
         docker build -t $ECR_REGISTRY/obligatorio-sparis-worker ./worker
         docker push $ECR_REGISTRY/obligatorio-sparis-worker
 
-    - name: Register new ECS Task Definition
+      name: Register new ECS Task Definition
       id: register-task
       run: |
         TASK_DEF=$(aws ecs describe-task-definition --task-definition $TASK_FAMILY)
+
         NEW_DEF=$(echo $TASK_DEF | jq \
-          --arg VOTE_IMAGE "$ECR_REGISTRY/obligatorio-sparis-vote:latest" \
-          --arg RESULT_IMAGE "$ECR_REGISTRY/obligatorio-sparis-result:latest" \
-          --arg WORKER_IMAGE "$ECR_REGISTRY/obligatorio-sparis-worker:latest" \
+          --arg VOTE_IMAGE "$ECR_REGISTRY/obligatorio-sparis-container-vote:latest" \
+          --arg RESULT_IMAGE "$ECR_REGISTRY/obligatorio-sparis-container-result:latest" \
+          --arg WORKER_IMAGE "$ECR_REGISTRY/obligatorio-sparis-container-worker:latest" \
           '.taskDefinition |
           .containerDefinitions |= map(
-            if .name == "obligatorio-sparis-dev-vote" then .image = $VOTE_IMAGE
-            elif .name == "obligatorio-sparis-dev-result" then .image = $RESULT_IMAGE
-            elif .name == "obligatorio-sparis-dev-worker" then .image = $WORKER_IMAGE
-            else .
-            end
+            if .name == "obligatorio-sparis-dev-container-vote" then .image = $VOTE_IMAGE
+            elif .name == "obligatorio-sparis-dev-container-result" then .image = $RESULT_IMAGE
+            elif .name == "obligatorio-sparis-dev-container-worker" then .image = $WORKER_IMAGE
+            else . end
           ) |
           {
             family,
@@ -71,11 +71,15 @@ jobs:
             memory,
             executionRoleArn,
             taskRoleArn
-          }')
-        echo "$NEW_DEF" > new-task-def.json
-        REVISION=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json --query 'taskDefinition.revision' --output text)
-        echo "revision=$REVISION" >> $GITHUB_OUTPUT
+          } | with_entries(select(.value != null))')
 
+        echo "$NEW_DEF" > new-task-def.json
+
+        REVISION=$(aws ecs register-task-definition \
+          --cli-input-json file://new-task-def.json \
+          --query 'taskDefinition.revision' --output text)
+
+        echo "revision=$REVISION" >> $GITHUB_OUTPUT
     - name: Update ECS service
       run: |
         aws ecs update-service \
