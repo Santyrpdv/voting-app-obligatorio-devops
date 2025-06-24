@@ -66,8 +66,15 @@ namespace Worker
             }
         }
 
-        private static NpgsqlConnection OpenDbConnection(string connectionString)
+        private static NpgsqlConnection OpenDbConnection()
         {
+            string host = Environment.GetEnvironmentVariable("DB_HOST") ?? "your-db-endpoint.rds.amazonaws.com";
+            string username = Environment.GetEnvironmentVariable("DB_USER") ?? "your_username";
+            string password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "your_password";
+            string dbname = Environment.GetEnvironmentVariable("DB_NAME") ?? "obligatoriosparisdb";
+
+            string connectionString = $"Host={host};Port=5432;Username={username};Password={password};Database={dbname};";
+
             NpgsqlConnection connection;
 
             while (true)
@@ -100,27 +107,6 @@ namespace Worker
             command.ExecuteNonQuery();
 
             return connection;
-        }
-
-        private static ConnectionMultiplexer OpenRedisConnection(string hostname)
-        {
-            // Use IP address to workaround https://github.com/StackExchange/StackExchange.Redis/issues/410
-            var ipAddress = GetIp(hostname);
-            Console.WriteLine($"Found redis at {ipAddress}");
-
-            while (true)
-            {
-                try
-                {
-                    Console.Error.WriteLine("Connecting to redis");
-                    return ConnectionMultiplexer.Connect(ipAddress);
-                }
-                catch (RedisConnectionException)
-                {
-                    Console.Error.WriteLine("Waiting for redis");
-                    Thread.Sleep(1000);
-                }
-            }
         }
 
         private static string GetIp(string hostname)
