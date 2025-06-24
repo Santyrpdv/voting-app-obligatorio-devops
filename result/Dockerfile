@@ -1,30 +1,24 @@
 FROM node:18-slim
 
-# Instalar NGINX y herramientas necesarias
+# Instalar curl, nginx y tini
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl tini nginx && \
+    apt-get install -y --no-install-recommends curl nginx tini && \
     rm -rf /var/lib/apt/lists/*
 
-# Crear directorio de la app
 WORKDIR /usr/local/app
 
-# Instalar dependencias globales y locales
-RUN npm install -g nodemon
-
+# Copiar y preparar dependencias
 COPY package*.json ./
-RUN npm ci && \
-    npm cache clean --force && \
-    mv node_modules /node_modules
+RUN npm ci && npm cache clean --force
 
 COPY . .
 
-# Copiar configuración de NGINX
-COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar configuración nginx
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Exponer el puerto que NGINX va a escuchar
-ENV PORT=80
+# Definir puertos
+ENV PORT=3000
 EXPOSE 80
 
-# Entrypoint y CMD para iniciar NGINX y la app
-ENTRYPOINT ["/usr/bin/tini", "--"]
+# Iniciar nginx y node
 CMD service nginx start && node server.js
