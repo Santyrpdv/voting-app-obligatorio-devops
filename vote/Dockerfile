@@ -17,4 +17,4 @@ COPY . .
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Flask se ejecutará en segundo plano
-CMD service nginx start && gunicorn app:app -b 127.0.0.1:5000 --workers 4
+CMD ["bash", "-c", "gunicorn app:app -b 127.0.0.1:5000 --workers 4 & nginx -g 'daemon off;'"]
