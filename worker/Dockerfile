@@ -24,7 +24,7 @@ WORKDIR /app
 
 # Copiar certificado raíz de Amazon RDS para conexiones seguras
 RUN mkdir -p /certs
-COPY global-bundle.pem /certs/global-bundle.pem
+COPY certs/global-bundle.pem /certs/global-bundle.pem
 
 # Copiar la aplicación compilada desde la etapa de build
 COPY --from=build /app .
