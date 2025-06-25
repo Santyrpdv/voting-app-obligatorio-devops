@@ -70,7 +70,7 @@ namespace Worker
 
         private static NpgsqlConnection OpenDbConnection(string host, string user, string password, string dbName)
         {
-            string connectionString = $"Host={host};Port=5432;Username={user};Password={password};Database={dbName};SslMode=Require;Trust Server Certificate=true;";
+            string connectionString = $"Host={host};Port=5432;Username={user};Password={password};Database={dbName};Ssl=true;SslMode=Require;TrustServerCertificate=true;";
             NpgsqlConnection connection;
 
             while (true)
