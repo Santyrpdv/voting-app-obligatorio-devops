@@ -1,28 +1,33 @@
-# because of dotnet, we always build on amd64, and target platforms in cli
-# dotnet doesn't support QEMU for building or running. 
-# (errors common in arm/v7 32bit) https://github.com/dotnet/dotnet-docker/issues/1537
-# https://hub.docker.com/_/microsoft-dotnet
-# hadolint ignore=DL3029
-# to build for a different platform than your host, use --platform=<platform>
-# for example, if you were on Intel (amd64) and wanted to build for ARM, you would use:
-# docker buildx build --platform "linux/arm64/v8" .
-
-# build compiles the program for the builder's local platform
+# Etapa de build
 FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:7.0 AS build
+
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG BUILDPLATFORM
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+
+RUN echo "Building on $BUILDPLATFORM for $TARGETPLATFORM"
 
 WORKDIR /source
-COPY *.csproj .
+
+# Copiar el archivo .csproj y restaurar dependencias
+COPY *.csproj . 
 RUN dotnet restore -a $TARGETARCH
 
+# Copiar el resto del código fuente y compilar
 COPY . .
-RUN dotnet publish -c release -o /app -a $TARGETARCH --self-contained false --no-restore
+RUN dotnet publish -c Release -o /app -a $TARGETARCH --self-contained false --no-restore
 
-# app image
+# Etapa final: imagen liviana con solo el runtime
 FROM mcr.microsoft.com/dotnet/runtime:7.0
+
 WORKDIR /app
+
+# Copiar certificado raíz de Amazon RDS para conexiones seguras
+RUN mkdir -p /certs
+COPY global-bundle.pem /certs/global-bundle.pem
+
+# Copiar la aplicación compilada desde la etapa de build
 COPY --from=build /app .
+
+# Ejecutar el worker
 ENTRYPOINT ["dotnet", "Worker.dll"]
